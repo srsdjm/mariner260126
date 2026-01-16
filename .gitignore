@@ -1,0 +1,11 @@
+# Local env files
+.env.*
+!.env.example
+
+# Web app artifacts
+web/node_modules/
+web/dist/
+
+# API build artifacts
+api/build/
+api/.gradle/

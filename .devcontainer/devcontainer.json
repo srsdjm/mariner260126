@@ -1,0 +1,59 @@
+{
+  "name": "Claude Code Sandbox",
+  "dockerComposeFile": [
+    "${localWorkspaceFolder}/compose.yml",
+    "${localWorkspaceFolder}/compose.dev.yml",
+    "compose.devcontainer.yml"
+  ],
+  "service": "dev",
+  "runServices": ["db", "api", "web", "browser"],
+  "shutdownAction": "stopCompose",
+  "workspaceFolder": "/workspace",
+  "forwardPorts": [6080, 5173],
+  "portsAttributes": {
+    "6080": { "label": "noVNC (browser UI)" },
+    "5173": { "label": "Vite Dev Server" }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "21"
+    },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "eamodio.gitlens",
+        "ms-azuretools.vscode-docker",
+        "redhat.java",
+        "fwcd.kotlin",
+        "editorconfig.editorconfig",
+        "ms-vscode.makefile-tools"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "bash",
+            "icon": "terminal-bash"
+          },
+          "zsh": {
+            "path": "zsh"
+          }
+        }
+      }
+    }
+  },
+  "remoteUser": "node",
+  "postCreateCommand": "bash scripts/devcontainer/postCreate.sh",
+  "postStartCommand": "bash scripts/devcontainer/postStart.sh",
+  "waitFor": "postStartCommand"
+}
