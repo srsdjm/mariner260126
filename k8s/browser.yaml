@@ -1,0 +1,71 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: browser
+  namespace: mariner-dev
+  labels:
+    app: browser
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: browser
+  template:
+    metadata:
+      labels:
+        app: browser
+    spec:
+      containers:
+        - name: browser
+          image: mariner-browser
+          ports:
+            - containerPort: 6080
+              name: novnc
+            - containerPort: 5900
+              name: vnc
+            - containerPort: 7331
+              name: mcp
+          env:
+            - name: DISPLAY
+              value: ":99"
+            - name: MCP_PORT
+              value: "7331"
+            - name: NOVNC_PORT
+              value: "6080"
+            - name: SCREEN_RES
+              value: "1920x1080x24"
+            - name: VNC_PORT
+              value: "5900"
+          securityContext:
+            capabilities:
+              add:
+                - SYS_ADMIN
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 4Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: browser
+  namespace: mariner-dev
+spec:
+  type: ClusterIP
+  selector:
+    app: browser
+  ports:
+    - port: 6080
+      targetPort: 6080
+      name: novnc
+    - port: 5900
+      targetPort: 5900
+      name: vnc
+    - port: 7331
+      targetPort: 7331
+      name: mcp

@@ -36,19 +36,26 @@ Common escalation cases:
 
 ### Setup and testing
 
-- Add setup steps and common build/test commands once the stack is chosen.
+- **First-time setup**: Run the host setup script before opening the devcontainer:
+  - WSL2/Linux: `./scripts/host/setup-k8s-linux.sh`
+  - macOS: `./scripts/host/setup-k8s-macos.sh`
+- **Starting development**: Open the repo in VS Code/Cursor, reopen in container, then run `tilt up`.
 - Automated tests exist for `api` (run `./api/gradlew -p api test`); `web` tests are not set up yet.
-- Container runtime is Docker; use `docker compose` for Dev Container services and do not assume Podman is installed.
+- Container runtime is Docker; the devcontainer uses Docker-outside-of-Docker to access the host Docker daemon.
 
-### Runtime stack (local + test/prod parity)
+### Platform philosophy
 
-- `compose.yml` is the source of truth for runtime containers (db, api, web).
-- `compose.dev.yml` is for dev-only port mappings and debug hooks; avoid changing runtime behavior there.
-- `.devcontainer/compose.devcontainer.yml` defines the `dev` tooling container; do not add runtime services to it.
-- The Dev Container uses docker-compose to orchestrate all services: `dev`, `db`, `api`, `web`, and `browser`.
-- All services start when the Dev Container runs, ensuring the full stack is available by default.
-- The dev container depends on `db` and `api` health checks before finishing startup.
-- The web client runs Vite in dev and is served by Nginx in the runtime image.
+- **Target platform**: GKE Autopilot. We avoid platform-specific modifications and stay "middle of the road" on Kubernetes to focus on application architecture and business features rather than infrastructure complexity.
+- **Local development**: Use k3d (k3s in Docker) for local Kubernetes. It's lightweight, fast, and sufficient for app development. Differences from upstream K8s don't matter for our use case.
+- **Simplify the dev stack**: Continuously look for opportunities to reduce moving parts, dependencies, and configuration. Fewer tools = less to break.
+
+### Runtime stack (Kubernetes)
+
+- **k8s/**: Kubernetes manifests for all services (database, api, web, browser).
+- **Tiltfile**: Orchestrates builds, deployments, and live updates for local development.
+- The k3d cluster runs on the host machine; the devcontainer connects via mounted kubeconfig.
+- Run `tilt up` to start all services; use `tilt down` to stop them.
+- The web client runs Vite in dev and is served by Nginx in the production image.
 
 ### Dependency lifecycle
 
@@ -56,14 +63,46 @@ Common escalation cases:
 
 ### Environment notes (dev container)
 
-- The dev container is built on Node 20 with Claude Code CLI, Java 21, PostgreSQL client, and Docker-outside-of-Docker support.
-- Runs as user `node` with zsh as the default shell (workspace at `/workspace`).
-- `docker` CLI is available inside the dev container; you can inspect services with `docker compose` from within the container.
+- The devcontainer is built on Debian with Node 20, Java 21, PostgreSQL client, kubectl, Tilt, and Docker-outside-of-Docker support.
+- Runs as user `vscode` with zsh as the default shell (workspace at `/workspaces/<repo>`).
+- `docker` and `kubectl` CLIs are available inside the devcontainer.
+- The host's `~/.kube` directory is mounted for Kubernetes access.
 - Network socket operations are restricted in the default sandbox, so connectivity checks may require escalated execution.
-- Use `DATABASE_SERVICE_URL` for in-stack access and `DATABASE_HOST_URL` for host tooling; avoid mixing them.
-- Vite allows the `web` host to enable `http://web:5173` access from the Dev Container.
 - For Git auth in automated/agent contexts, prefer SSH remotes via a forwarded `ssh-agent` when available. Avoid copying private keys into containers; treat any tokens as secrets (don't commit them; avoid persisting them in plaintext).
-- Claude Code is pre-configured with Playwright MCP for browser automation at `http://browser:7331/mcp`.
+- Claude Code is pre-configured with Playwright MCP for browser automation at `http://browser:7331/mcp` (when browser pod is running).
+
+## Simplicity first
+
+**Core principle: Complexity is expensive. A less complex solution is a better solution, as long as it meets the requirements.**
+
+Before implementing, always ask:
+- What is the simplest approach that solves the actual problem?
+- Can this be done with existing tools/patterns instead of adding new ones?
+- Am I solving the stated problem, or a hypothetical future problem?
+
+Implementation guidelines:
+- **Discuss before building**: When multiple approaches exist, present options and trade-offs to the user before implementing. Let them choose the level of sophistication.
+- **Start minimal**: Implement the simplest version that meets stated requirements. Don't add features, abstractions, or flexibility unless explicitly requested.
+- **Avoid premature optimization**: Don't add caching, pooling, retry logic, or other complexity unless there's a demonstrated need.
+- **Resist abstraction**: Three similar pieces of code are better than one premature abstraction. Wait for the pattern to emerge before extracting.
+- **Question dependencies**: Adding a library? Consider if the problem can be solved with standard library features or a few lines of code instead.
+- **Delete over comment**: Remove unused code completely. Don't leave commented-out code, `// TODO`, or "for future use" scaffolding.
+- **Standard over custom**: Use language/framework idioms and conventions. Custom wrappers and helpers should be rare and well-justified.
+
+Red flags that indicate over-engineering:
+- Configuration files for things that could be constants
+- Factories, builders, or managers for simple object creation
+- Interfaces with a single implementation
+- Middleware/plugins/hooks for one-time operations
+- Generic solutions when specific requirements are clear
+- "Future-proofing" for hypothetical requirements
+
+When you catch yourself building something complex:
+1. Stop and describe the simplest possible solution
+2. Explain why the simpler approach won't work
+3. Let the user decide if the complexity is justified
+
+Remember: **The best code is no code. The second best code is simple code.**
 
 ## Documented over guessed
 

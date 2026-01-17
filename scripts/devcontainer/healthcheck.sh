@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Health check for K8s-based development environment
 set -euo pipefail
 
 if [ "${MARINER_DEVCONTAINER:-}" != "1" ]; then
@@ -6,38 +7,41 @@ if [ "${MARINER_DEVCONTAINER:-}" != "1" ]; then
   exit 1
 fi
 
-ready_timeout_seconds=120
-poll_interval_seconds=2
+echo "Running devcontainer health checks..."
+echo ""
 
-wait_for() {
-  local name="$1"
-  local cmd="$2"
-  local elapsed=0
-
-  echo "Waiting for ${name}..."
-  until eval "${cmd}" >/dev/null 2>&1; do
-    if [ "${elapsed}" -ge "${ready_timeout_seconds}" ]; then
-      echo "Timed out waiting for ${name} after ${ready_timeout_seconds}s."
-      return 1
-    fi
-    sleep "${poll_interval_seconds}"
-    elapsed=$((elapsed + poll_interval_seconds))
-  done
-  echo "${name} is ready."
-}
-
-echo "Running dev container health checks..."
-
+# Check tooling versions
 echo "Tooling:"
-echo "node: $(node --version)"
-echo "npm: $(npm --version)"
-echo "java: $(java -version 2>&1 | head -n 1)"
-echo "psql: $(psql --version)"
+echo "  node: $(node --version)"
+echo "  npm: $(npm --version)"
+echo "  java: $(java -version 2>&1 | head -n 1)"
+echo "  psql: $(psql --version | head -n 1)"
+echo "  kubectl: $(kubectl version --client 2>/dev/null | head -n 1)"
+echo "  tilt: $(tilt version 2>/dev/null || echo 'not installed')"
+echo "  docker: $(docker --version)"
+echo ""
 
-wait_for "db" "PGPASSWORD=mariner psql -h db -U mariner -d mariner -c 'select 1;'"
-wait_for "api" "curl -sS --max-time 2 http://api:8080/health"
-# Ensure Host header matches Vite allowedHosts (service name is "web").
-wait_for "web (vite)" "curl -sS --max-time 2 -H 'Host: web' http://web:5173/ | head -n 1"
-wait_for "browser (noVNC)" "curl -sS --max-time 2 http://browser:6080/vnc.html | head -n 1"
+# Check Kubernetes connectivity
+echo "Kubernetes cluster:"
+if kubectl cluster-info &> /dev/null; then
+  echo "  ✓ Connected to cluster"
+  kubectl get nodes --no-headers 2>/dev/null | while read -r line; do
+    echo "    $line"
+  done
+else
+  echo "  ⚠ Not connected (run setup script on host)"
+fi
+echo ""
 
-echo "Health checks passed."
+# Check Docker connectivity
+echo "Docker:"
+if docker info &> /dev/null; then
+  echo "  ✓ Docker daemon accessible"
+else
+  echo "  ⚠ Docker daemon not accessible"
+fi
+echo ""
+
+echo "Health checks complete."
+echo ""
+echo "To start the development stack, run: tilt up"

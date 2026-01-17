@@ -20,7 +20,7 @@ if [ -S /var/run/docker.sock ] || [ -S /var/run/docker-host.sock ]; then
       echo "Adjusting docker group GID from $CURRENT_DOCKER_GID to $DOCKER_SOCK_GID"
       sudo groupmod -g "$DOCKER_SOCK_GID" docker 2>/dev/null || echo "Note: Could not adjust docker group GID"
       # Re-add user to group with new GID (group membership refresh)
-      sudo usermod -aG docker node 2>/dev/null || true
+      sudo usermod -aG docker vscode 2>/dev/null || true
     fi
   fi
 fi
@@ -31,5 +31,8 @@ echo "npm: $(npm --version)"
 echo "java: $(java -version 2>&1 | head -n 1)"
 
 git config --global --add safe.directory /workspace >/dev/null 2>&1 || true
+
+# Show Tilt/K8s instructions
+bash .devcontainer/start-tilt.sh
 
 bash scripts/devcontainer/healthcheck.sh

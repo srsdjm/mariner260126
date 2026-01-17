@@ -1,101 +1,64 @@
-FROM node:20
+# Use Microsoft's official devcontainer base image (Debian-based)
+# This image is purpose-built for dev containers and includes:
+# - Git, zsh, oh-my-zsh pre-configured
+# - Non-root 'vscode' user with sudo access
+# - Common dev tools: curl, wget, vim, nano, jq, etc.
+FROM mcr.microsoft.com/devcontainers/base:debian
 
 ARG TZ
 ENV TZ="$TZ"
 
-ARG CLAUDE_CODE_VERSION=latest
+ARG GIT_DELTA_VERSION=0.18.2
 
-# Install basic development tools and iptables/ipset
+# Install project-specific tools not provided by devcontainer features
+# Note: Base image + features provide: git, curl, wget, vim, nano, jq, zsh, sudo, etc.
+# Note: Node.js, Java, kubectl, helm, gh installed via features
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  less \
-  git \
-  procps \
-  sudo \
   fzf \
-  zsh \
-  man-db \
-  unzip \
-  gnupg2 \
-  gh \
   iptables \
   ipset \
   iproute2 \
   dnsutils \
   aggregate \
-  jq \
-  nano \
-  vim \
   postgresql-client \
-  curl \
-  locales \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Generate locale
-RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
-    locale-gen
+# Install git-delta (not available in Debian bookworm, no devcontainer feature exists)
+# This provides better git diff output (syntax highlighting)
+RUN ARCH=$(dpkg --print-architecture) && \
+  wget "https://github.com/dandavison/delta/releases/download/${GIT_DELTA_VERSION}/git-delta_${GIT_DELTA_VERSION}_${ARCH}.deb" && \
+  dpkg -i "git-delta_${GIT_DELTA_VERSION}_${ARCH}.deb" && \
+  rm "git-delta_${GIT_DELTA_VERSION}_${ARCH}.deb"
 
-# Ensure default node user has access to /usr/local/share
-RUN mkdir -p /usr/local/share/npm-global && \
-  chown -R node:node /usr/local/share
-
-ARG USERNAME=node
-
-# Persist bash history.
-RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" \
-  && mkdir /commandhistory \
-  && touch /commandhistory/.bash_history \
-  && chown -R $USERNAME /commandhistory
+# Install Tilt (third-party devcontainer features can be unreliable)
+RUN ARCH=$(uname -m) && \
+  TILT_VERSION=$(curl -sL https://api.github.com/repos/tilt-dev/tilt/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/') && \
+  wget "https://github.com/tilt-dev/tilt/releases/download/v${TILT_VERSION}/tilt.${TILT_VERSION}.linux.${ARCH}.tar.gz" && \
+  tar -xzf "tilt.${TILT_VERSION}.linux.${ARCH}.tar.gz" tilt && \
+  mv tilt /usr/local/bin/ && \
+  rm "tilt.${TILT_VERSION}.linux.${ARCH}.tar.gz"
 
 # Set `DEVCONTAINER` environment variable to help with orientation
 ENV DEVCONTAINER=true
 
-# Create workspace and config directories and set permissions
-RUN mkdir -p /workspace /home/node/.claude && \
-  chown -R node:node /workspace /home/node/.claude
-
-WORKDIR /workspace
-
-ARG GIT_DELTA_VERSION=0.18.2
-RUN ARCH=$(dpkg --print-architecture) && \
-  wget "https://github.com/dandavison/delta/releases/download/${GIT_DELTA_VERSION}/git-delta_${GIT_DELTA_VERSION}_${ARCH}.deb" && \
-  sudo dpkg -i "git-delta_${GIT_DELTA_VERSION}_${ARCH}.deb" && \
-  rm "git-delta_${GIT_DELTA_VERSION}_${ARCH}.deb"
-
-# Set up non-root user
-USER node
-
-# Install global packages
-ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
-ENV PATH=$PATH:/usr/local/share/npm-global/bin
-
-# Set the default shell to zsh rather than sh
-ENV SHELL=/bin/zsh
-
-# Set the default editor and visual
-ENV EDITOR=nano
-ENV VISUAL=nano
-
-# Default powerline10k theme
-ARG ZSH_IN_DOCKER_VERSION=1.2.0
-RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v${ZSH_IN_DOCKER_VERSION}/zsh-in-docker.sh)" -- \
-  -p git \
-  -p fzf \
-  -a "source /usr/share/doc/fzf/examples/key-bindings.zsh" \
-  -a "source /usr/share/doc/fzf/examples/completion.zsh" \
-  -a "export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" \
-  -x
-
-# Install Claude
-RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
-
-
-# Copy and set up firewall script
-COPY .devcontainer/init-firewall.sh /usr/local/bin/
-USER root
+# Configure security: firewall script + docker socket permissions
+# These require sudo and are justified:
+# - init-firewall.sh: Requires root for iptables/ipset (network security control)
+# - groupmod/usermod: Required for docker socket GID synchronization (docker-outside-docker)
+COPY init-firewall.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/init-firewall.sh && \
-  echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/node-firewall && \
-  echo "node ALL=(root) NOPASSWD: /usr/sbin/groupmod" > /etc/sudoers.d/node-docker && \
-  echo "node ALL=(root) NOPASSWD: /usr/sbin/usermod" >> /etc/sudoers.d/node-docker && \
-  chmod 0440 /etc/sudoers.d/node-firewall && \
-  chmod 0440 /etc/sudoers.d/node-docker
-USER node
+  echo "vscode ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/vscode-firewall && \
+  echo "vscode ALL=(root) NOPASSWD: /usr/sbin/groupmod" > /etc/sudoers.d/vscode-docker && \
+  echo "vscode ALL=(root) NOPASSWD: /usr/sbin/usermod" >> /etc/sudoers.d/vscode-docker && \
+  chmod 0440 /etc/sudoers.d/vscode-firewall && \
+  chmod 0440 /etc/sudoers.d/vscode-docker
+
+# Switch to non-root user (vscode user is pre-configured in base image)
+USER vscode
+
+# Create workspace and config directories
+RUN mkdir -p /home/vscode/.claude
+
+# Configure fzf for zsh (zsh and oh-my-zsh are pre-installed in base image)
+RUN echo 'source /usr/share/doc/fzf/examples/key-bindings.zsh' >> ~/.zshrc && \
+    echo 'source /usr/share/doc/fzf/examples/completion.zsh' >> ~/.zshrc

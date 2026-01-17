@@ -9,3 +9,9 @@ web/dist/
 # API build artifacts
 api/build/
 api/.gradle/
+
+# Binaries (don't commit downloaded tools)
+kind
+kubectl
+k3d
+tilt

@@ -1,24 +1,55 @@
 {
-  "name": "Claude Code Sandbox",
-  "dockerComposeFile": [
-    "${localWorkspaceFolder}/compose.yml",
-    "${localWorkspaceFolder}/compose.dev.yml",
-    "compose.devcontainer.yml"
+  "name": "Mariner K8s Dev (k3d + Tilt)",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "TZ": "${localEnv:TZ:America/Los_Angeles}",
+      "GIT_DELTA_VERSION": "0.18.2"
+    }
+  },
+  "runArgs": [
+    "--cap-add=NET_ADMIN",
+    "--cap-add=NET_RAW"
   ],
-  "service": "dev",
-  "runServices": ["db", "api", "web", "browser"],
-  "shutdownAction": "stopCompose",
-  "workspaceFolder": "/workspace",
-  "forwardPorts": [6080, 5173],
+  "mounts": [
+    "source=claude-code-bashhistory,target=/commandhistory,type=volume",
+    "source=claude-code-config,target=/home/vscode/.claude,type=volume",
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+    "source=gradle_cache,target=/home/vscode/.gradle,type=volume",
+    "source=${localEnv:HOME}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached"
+  ],
+  "containerEnv": {
+    "MARINER_DEVCONTAINER": "1",
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true"
+  },
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "forwardPorts": [6080, 5173, 8080, 10350],
   "portsAttributes": {
     "6080": { "label": "noVNC (browser UI)" },
-    "5173": { "label": "Vite Dev Server" }
+    "5173": { "label": "Vite Dev Server" },
+    "8080": { "label": "Ktor API" },
+    "10350": { "label": "Tilt UI" }
   },
   "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
     "ghcr.io/devcontainers/features/java:1": {
       "version": "21"
     },
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "moby": false
+    },
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "version": "latest",
+      "helm": "latest",
+      "minikube": "none"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    }
   },
   "customizations": {
     "vscode": {
@@ -28,6 +59,7 @@
         "esbenp.prettier-vscode",
         "eamodio.gitlens",
         "ms-azuretools.vscode-docker",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
         "redhat.java",
         "fwcd.kotlin",
         "editorconfig.editorconfig",
@@ -52,7 +84,7 @@
       }
     }
   },
-  "remoteUser": "node",
+  "remoteUser": "vscode",
   "postCreateCommand": "bash scripts/devcontainer/postCreate.sh",
   "postStartCommand": "bash scripts/devcontainer/postStart.sh",
   "waitFor": "postStartCommand"

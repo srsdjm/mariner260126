@@ -1,0 +1,57 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: mariner-dev
+  labels:
+    app: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: mariner-web
+          ports:
+            - containerPort: 5173
+              name: vite
+          env:
+            - name: VITE_API_URL
+              value: "http://api:8080"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5173
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5173
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: mariner-dev
+spec:
+  type: ClusterIP
+  selector:
+    app: web
+  ports:
+    - port: 5173
+      targetPort: 5173
+      name: vite
