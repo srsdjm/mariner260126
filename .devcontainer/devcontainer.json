@@ -27,10 +27,22 @@
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "forwardPorts": [6080, 5173, 8080, 10350],
   "portsAttributes": {
-    "6080": { "label": "noVNC (browser UI)" },
-    "5173": { "label": "Vite Dev Server" },
-    "8080": { "label": "Ktor API" },
-    "10350": { "label": "Tilt UI" }
+    "6080": {
+      "label": "noVNC (browser UI)",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Vite Dev Server",
+      "onAutoForward": "openBrowser"
+    },
+    "8080": {
+      "label": "Ktor API",
+      "onAutoForward": "notify"
+    },
+    "10350": {
+      "label": "Tilt UI",
+      "onAutoForward": "openPreview"
+    }
   },
   "features": {
     "ghcr.io/devcontainers/features/node:1": {

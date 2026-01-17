@@ -11,6 +11,19 @@ echo "========================================"
 echo "Devcontainer post-create setup"
 echo "========================================"
 
+# Configure Tilt telemetry opt-out
+echo ""
+echo "Configuring Tilt settings..."
+mkdir -p ~/.tilt-dev
+cat > ~/.tilt-dev/config.json <<EOF
+{
+  "analytics": {
+    "opt": "opt-out"
+  }
+}
+EOF
+echo "✓ Tilt telemetry disabled"
+
 # Verify Kubernetes cluster connectivity (cluster runs on host via k3d)
 echo ""
 echo "Checking Kubernetes cluster connectivity..."

@@ -2,7 +2,7 @@
 # This file defines how Tilt builds, deploys, and hot-reloads services
 
 # Set default namespace
-allow_k8s_contexts('kind-mariner-dev')
+allow_k8s_contexts('k3d-mariner-dev')
 
 # Create namespace if it doesn't exist
 k8s_yaml('k8s/namespace.yaml')

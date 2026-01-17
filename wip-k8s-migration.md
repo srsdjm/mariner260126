@@ -155,13 +155,20 @@ Transform the current Docker Compose + devcontainer setup into a **Kubernetes-na
 
 ## Current Focus
 
-**Phase 0 Complete - Ready for Testing!**
+**Phase 0 Issues Resolved - Ready for Rebuild & Validation!**
 
 **Next Steps:**
-1. Rebuild the devcontainer to test the new K8s setup
-2. Run validation checklist from Phase 0
-3. Start Phase 1: Kubernetes Development Workflow optimization
-4. After validation succeeds, can optionally remove old Docker Compose files
+1. **Rebuild the devcontainer** to apply fixes:
+   - Database URL format fix (API will start successfully)
+   - Tilt context correction (no more manual override needed)
+   - Telemetry opt-out (no prompts)
+   - VSCode native browser strategy (cross-platform, zero maintenance)
+2. **Run validation checklist from Phase 0**
+3. **Verify all services start** with `tilt up`
+   - Tilt UI should auto-open in embedded browser (side-by-side view)
+   - Vite dev server should auto-open in external browser when ready
+4. **Start Phase 1**: Kubernetes Development Workflow optimization
+5. After validation succeeds, can optionally remove old Docker Compose files
 
 ---
 
@@ -172,6 +179,7 @@ Transform the current Docker Compose + devcontainer setup into a **Kubernetes-na
 - **Why k3d?** Lightweight k3s distribution, fast startup, built-in registry support, runs reliably on host
 - **Why host-based cluster?** Avoids Docker-in-Docker kubelet issues that caused Kind to fail inside the devcontainer
 - **Why Colima on macOS?** Lightweight Docker runtime, no licensing concerns, CLI-friendly
+- **Why VSCode native port forwarding?** Cross-platform browser opening without custom scripts; embedded preview perfect for Tilt monitoring; zero maintenance; works identically on WSL2/macOS/Linux/Remote SSH
 
 ### Trade-offs Accepted
 - **Learning Curve:** Need to learn basic kubectl and K8s concepts
@@ -191,18 +199,45 @@ Transform the current Docker Compose + devcontainer setup into a **Kubernetes-na
 
 ## Questions & Blockers
 
-_None yet - will update as work progresses_
+### Post-Setup Issues
+
+#### ✅ Resolved (2026-01-17)
+
+1. **Tilt Telemetry Prompt**: ✅ FIXED - Added telemetry opt-out configuration in [scripts/devcontainer/postCreate.sh](scripts/devcontainer/postCreate.sh#L14-L25)
+
+2. **Tilt Context Mismatch**: ✅ FIXED - Updated [Tiltfile:5](Tiltfile#L5) from `kind-mariner-dev` to `k3d-mariner-dev`
+
+3. **API CrashLoopBackOff**: ✅ FIXED - Changed DATABASE_SERVICE_URL in [k8s/api.yaml:29](k8s/api.yaml#L29) from JDBC format to URI format `postgresql://mariner:mariner@db:5432/mariner`
+
+4. **Browser Auto-Open**: ✅ FIXED - Implemented VSCode native port forwarding with `portsAttributes` in [.devcontainer/devcontainer.json:29-46](.devcontainer/devcontainer.json#L29-L46)
+   - **Tilt UI (10350)**: Opens in embedded Simple Browser (`openPreview`) for side-by-side monitoring
+   - **Vite Dev Server (5173)**: Opens in external browser (`openBrowser`) for full DevTools
+   - **API/noVNC**: Notification only (`notify`) for manual access
+   - **Cross-platform**: Works on WSL2, macOS, Linux, Remote SSH without custom scripts
+   - **Documentation**: See [docs/development/browser-workflow.md](docs/development/browser-workflow.md)
+
+#### 🔍 Outstanding Issues
+
+5. **VSCode Claude Code Extension Authentication**: OAuth redirect callback fails in devcontainer - host browser cannot reach VSCode waiting for the callback. (Known limitation - use device code flow or authenticate before entering devcontainer)
+
+6. **Web and Browser Services**: Not yet tested - blocked previously by API crash. Should start automatically once API is healthy after fixes above.
 
 ---
 
 ## References
 
+### Project Documentation
+- **Browser Workflow Guide:** [docs/development/browser-workflow.md](docs/development/browser-workflow.md)
 - **Plan Document:** [federated-exploring-harp.md](/home/srsdjm/.claude/plans/federated-exploring-harp.md)
+
+### External Resources
 - **Tilt Documentation:** https://tilt.dev/
 - **k3d Documentation:** https://k3d.io/
 - **Colima (macOS Docker):** https://github.com/abiosoft/colima
 - **VS Code DevContainers:** https://code.visualstudio.com/remote/advancedcontainers/use-docker-kubernetes
+- **VSCode Port Forwarding:** https://code.visualstudio.com/docs/debugtest/port-forwarding
+- **DevContainer Specification:** https://containers.dev/implementors/json_reference/
 
 ---
 
-**Last Updated:** 2026-01-16 - Phase 0 Complete
+**Last Updated:** 2026-01-17 - Phase 0 post-setup issues resolved
