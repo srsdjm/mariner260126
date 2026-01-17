@@ -150,9 +150,11 @@ fi
 
 # Add current user to docker group if not already
 # Use getent to check actual group membership (not just current session)
+USER_ADDED_TO_DOCKER=false
 if ! getent group docker | grep -q "\b${USER}\b"; then
   echo "Adding $USER to docker group..."
   sudo usermod -aG docker "$USER"
+  USER_ADDED_TO_DOCKER=true
 
   # Re-execute this script with the new group membership
   echo "Restarting script with docker group membership..."
@@ -251,8 +253,21 @@ fi
 
 # Update kubeconfig
 echo "Updating kubeconfig..."
+# Ensure .kube directory exists with proper ownership
 mkdir -p "${HOME}/.kube"
-k3d kubeconfig merge "${CLUSTER_NAME}" --kubeconfig-merge-default
+chmod 700 "${HOME}/.kube"
+
+# Merge kubeconfig
+if k3d kubeconfig merge "${CLUSTER_NAME}" --kubeconfig-merge-default; then
+  echo "Kubeconfig updated successfully."
+  # Ensure config file has proper permissions
+  if [ -f "${HOME}/.kube/config" ]; then
+    chmod 600 "${HOME}/.kube/config"
+  fi
+else
+  echo "WARNING: Failed to merge kubeconfig. You may need to run:"
+  echo "  k3d kubeconfig merge ${CLUSTER_NAME} --kubeconfig-merge-default"
+fi
 
 # Verify cluster access
 echo ""
@@ -276,6 +291,31 @@ echo ""
 echo "Cluster: ${CLUSTER_NAME}"
 echo "Registry: localhost:${REGISTRY_PORT} (k3d-${REGISTRY_NAME}:${REGISTRY_PORT} from containers)"
 echo ""
+
+# Warn if user was added to docker group
+if [ "$USER_ADDED_TO_DOCKER" = true ]; then
+  echo "========================================"
+  echo "IMPORTANT: Docker Group Change"
+  echo "========================================"
+  echo ""
+  echo "Your user was added to the 'docker' group."
+  echo "You MUST restart your shell session for this to take effect:"
+  echo ""
+  if is_wsl; then
+    echo "  Option 1 (Recommended): Close this terminal and reopen WSL"
+    echo "  Option 2: Run 'wsl --shutdown' from PowerShell/CMD, then reopen WSL"
+  else
+    echo "  Log out and log back in to your Linux session"
+  fi
+  echo ""
+  echo "After restarting, verify with: groups"
+  echo "You should see 'docker' in the list."
+  echo ""
+  echo "If the kubeconfig setup failed or VSCode can't find ~/.kube, run:"
+  echo "  mkdir -p ~/.kube && k3d kubeconfig merge ${CLUSTER_NAME} --kubeconfig-merge-default"
+  echo ""
+fi
+
 echo "Next steps:"
 echo "  1. Install VS Code or Cursor (if not already installed)"
 echo "     - VS Code: https://code.visualstudio.com/docs/setup/linux"
