@@ -26,6 +26,16 @@ When a service starts and binds to a port, VSCode automatically:
 2. Forwards it to your host machine
 3. Takes the configured action (`openBrowser`, `openPreview`, or `notify`)
 
+> **Important: `forwardPorts` vs `onAutoForward`**
+>
+> The `onAutoForward` action **only triggers for auto-detected ports**. Ports listed in `forwardPorts` are pre-forwarded at container startup (before any service is listening), so the `onAutoForward` action never fires for them.
+>
+> **Rule of thumb:**
+> - Use `forwardPorts` for ports where you want `notify` or `silent` behavior
+> - Omit from `forwardPorts` any port where you want `openBrowser` or `openPreview` to auto-trigger
+>
+> This is why ports 5173 (Vite) and 10350 (Tilt) are **not** in `forwardPorts` but still have `portsAttributes` configured—we want their `onAutoForward` actions to trigger when the services start.
+
 ### External Browser (`openBrowser`)
 
 **Used for:** Vite Dev Server (port 5173)
@@ -174,11 +184,12 @@ This solution works **identically** on all platforms with **zero configuration**
 **Symptom:** Port forwards but browser doesn't open
 
 **Solutions:**
-1. Check VSCode settings:
+1. **Check if port is in `forwardPorts`:** The most common cause! If the port is listed in `forwardPorts`, the `onAutoForward` action won't trigger because the port is pre-forwarded at startup. Remove the port from `forwardPorts` if you want `openBrowser` or `openPreview` to work.
+2. Check VSCode settings:
    - Settings → Search "port auto forward"
    - Ensure "Remote › Auto Forward Ports" is enabled
-2. Manually open from Ports panel (see above)
-3. Check if notification was dismissed - won't auto-open again until next session
+3. Manually open from Ports panel (see above)
+4. Check if notification was dismissed - won't auto-open again until next session
 
 ### Embedded Preview Shows Error
 
@@ -259,7 +270,7 @@ From `.devcontainer/devcontainer.json`:
 
 ```json
 {
-  "forwardPorts": [6080, 5173, 8080, 10350],
+  "forwardPorts": [6080, 8080],
   "portsAttributes": {
     "6080": {
       "label": "noVNC (browser UI)",
@@ -280,6 +291,8 @@ From `.devcontainer/devcontainer.json`:
   }
 }
 ```
+
+**Note:** Ports 5173 and 10350 are intentionally **not** in `forwardPorts` so their `onAutoForward` actions (`openBrowser` and `openPreview`) will trigger when Vite and Tilt start. Ports 6080 and 8080 use `notify`, so pre-forwarding them is fine.
 
 ### Available `onAutoForward` Options
 

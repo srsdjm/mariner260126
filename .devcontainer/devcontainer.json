@@ -25,7 +25,7 @@
     "POWERLEVEL9K_DISABLE_GITSTATUS": "true"
   },
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-  "forwardPorts": [6080, 5173, 8080, 10350],
+  "forwardPorts": [6080, 8080],
   "portsAttributes": {
     "6080": {
       "label": "noVNC (browser UI)",
