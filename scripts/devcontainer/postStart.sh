@@ -25,6 +25,14 @@ if [ -S /var/run/docker.sock ] || [ -S /var/run/docker-host.sock ]; then
   fi
 fi
 
+# Fix kubeconfig for devcontainer
+# k3d creates kubeconfig with server: https://0.0.0.0:PORT which doesn't work from containers
+# Replace with Docker host gateway IP to access the API port exposed by k3d
+if [ -f ~/.kube/config ] && grep -q "server: https://0.0.0.0:" ~/.kube/config; then
+  DOCKER_HOST_IP=$(ip route show | grep default | awk '{print $3}')
+  sed -i "s|server: https://0.0.0.0:|server: https://$DOCKER_HOST_IP:|g" ~/.kube/config
+fi
+
 echo "Devcontainer ready."
 echo "node: $(node --version)"
 echo "npm: $(npm --version)"

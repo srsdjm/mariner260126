@@ -5,37 +5,42 @@ This directory contains Kubernetes manifests for the Mariner development environ
 ## Overview
 
 The Mariner project uses a **Kubernetes-native development environment** with:
-- **Kind** (Kubernetes in Docker) for local K8s clusters
+- **k3d** (Lightweight Kubernetes in Docker) for local K8s clusters
 - **Tilt** for hot-reloading and development workflow automation
 - **DevContainer** for portable, reproducible development environments
 
+See [Networking Architecture](../architecture/networking.md) for details on how the devcontainer connects to the k3d cluster.
+
 ## Files
 
-- [namespace.yaml](namespace.yaml) - Creates the `mariner-dev` namespace
-- [database.yaml](database.yaml) - PostgreSQL database with persistent storage
-- [api.yaml](api.yaml) - Ktor API backend with health checks and JDWP debugging
-- [web.yaml](web.yaml) - React/Vite frontend with hot reload
-- [browser.yaml](browser.yaml) - Playwright browser automation with noVNC
+- [namespace.yaml](../../k8s/namespace.yaml) - Creates the `mariner-dev` namespace
+- [database.yaml](../../k8s/database.yaml) - PostgreSQL database with persistent storage
+- [api.yaml](../../k8s/api.yaml) - Ktor API backend with health checks and JDWP debugging
+- [web.yaml](../../k8s/web.yaml) - React/Vite frontend with hot reload
+- [browser.yaml](../../k8s/browser.yaml) - Playwright browser automation with noVNC
 
 ## Getting Started
 
 ### Prerequisites
 
-The devcontainer automatically installs:
+**On your host machine** (before opening devcontainer), run:
+
+- **WSL2/Linux**: `./scripts/host/setup-k8s-linux.sh`
+- **macOS**: `./scripts/host/setup-k8s-macos.sh`
+
+These scripts install and configure:
+- Docker (Docker Engine on Linux, Colima on macOS)
 - kubectl (Kubernetes CLI)
-- Kind (Kubernetes in Docker)
-- Tilt (development workflow tool)
-- Helm (package manager)
+- k3d (Lightweight Kubernetes in Docker)
+- Creates a k3d cluster named `mariner-dev`
+- Sets up a local Docker registry at `localhost:5005`
 
 ### Starting the Environment
 
-1. Open the project in VS Code with the DevContainer extension
-2. Wait for the devcontainer to build and start
-3. The setup will automatically:
-   - Install Kind and Tilt
-   - Create a Kind cluster named `mariner-dev`
-   - Set up a local Docker registry at `localhost:5005`
-   - Show instructions for starting Tilt
+1. Run the host setup script (see Prerequisites above)
+2. Open the project in VS Code with the DevContainer extension
+3. Click "Reopen in Container" when prompted
+4. Wait for the devcontainer to build and start
 
 4. Start all services:
    ```bash
@@ -117,8 +122,8 @@ postgresql://mariner:mariner@localhost:5432/mariner
 # Stop all services
 tilt down
 
-# Delete the Kind cluster (if needed)
-kind delete cluster --name mariner-dev
+# Delete the k3d cluster (if needed - run on host)
+k3d cluster delete mariner-dev
 ```
 
 ## Architecture
@@ -160,7 +165,7 @@ All resources are deployed to the `mariner-dev` namespace to isolate development
 
 ## Tilt Configuration
 
-The [Tiltfile](../Tiltfile) defines:
+The [Tiltfile](../../Tiltfile) defines:
 
 - Docker image builds with live updates
 - Kubernetes resource deployments
@@ -179,9 +184,9 @@ kubectl cluster-info
 # Verify nodes are ready
 kubectl get nodes
 
-# Recreate cluster if needed
-kind delete cluster --name mariner-dev
-bash .devcontainer/setup-k8s.sh
+# Recreate cluster if needed (run on host, not in devcontainer)
+k3d cluster delete mariner-dev
+./scripts/host/setup-k8s-linux.sh   # or setup-k8s-macos.sh
 ```
 
 ### Pod not starting
@@ -207,7 +212,7 @@ The local registry should be at `localhost:5005`. Verify:
 
 ```bash
 # Check registry is running
-docker ps | grep kind-registry
+docker ps | grep k3d-mariner-registry
 
 # Test registry
 docker pull hello-world
@@ -217,7 +222,7 @@ docker push localhost:5005/hello-world
 
 ## Next Steps
 
-See [K8S_MIGRATION_STATUS.md](../K8S_MIGRATION_STATUS.md) for:
+See [Migration Status](../architecture/migration-status.md) for:
 - Phase 1: Kubernetes Development Workflow enhancements
 - Phase 2: Production-ready patterns (ConfigMaps, Secrets, Ingress)
 - Migration status and validation checklists

@@ -1,9 +1,10 @@
-# Kubernetes Migration Status
+# WIP: Kubernetes Migration
 
 **Project:** Mariner K8s-Native Development Environment
-**Plan:** [federated-exploring-harp.md](/home/srsdjm/.claude/plans/federated-exploring-harp.md)
 **Started:** 2026-01-16
 **Status:** 🟡 In Progress
+
+> **Note:** This is an active work-in-progress tracking document. When this migration is complete, archive to `work/archive/wip-k8s-migration-YYYY-MM-DD.md`
 
 ---
 
@@ -76,7 +77,7 @@ Transform the current Docker Compose + devcontainer setup into a **Kubernetes-na
 
 - [ ] [k8s/gradle-cache-pvc.yaml](k8s/gradle-cache-pvc.yaml) - Gradle cache PersistentVolumeClaim
 - [ ] [tilt-resources/namespace.yaml](tilt-resources/namespace.yaml) - Namespace definition
-- [ ] [docs/KUBERNETES_DEV.md](docs/KUBERNETES_DEV.md) - Developer runbook
+- [ ] [Developer Runbook](docs/development/runbook.md) - Developer runbook
 
 ### Files to Modify
 
@@ -110,12 +111,12 @@ Transform the current Docker Compose + devcontainer setup into a **Kubernetes-na
 
 - [ ] [k8s/config.yaml](k8s/config.yaml) - ConfigMap and Secret for app configuration
 - [ ] [k8s/ingress.yaml](k8s/ingress.yaml) - Ingress resource for routing
-- [ ] [docs/GKE_DEPLOYMENT.md](docs/GKE_DEPLOYMENT.md) - Production deployment guide
+- [ ] [GKE Deployment Guide](docs/deployment/gke.md) - Production deployment guide
 
 ### Files to Modify
 
 - [ ] [k8s/api.yaml](k8s/api.yaml) - Use ConfigMap and Secret for environment variables
-- [ ] Host setup scripts - Add /etc/hosts entry for mariner.local
+- [ ] [Host setup scripts](scripts/host/) - Add /etc/hosts entry for mariner.local
 - [ ] [Tiltfile](Tiltfile) - Add production build testing profile
 
 ### Implementation Tasks

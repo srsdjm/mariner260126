@@ -4,7 +4,7 @@ Monorepo for the Mariner web app (Vite + React + MUI) and API (Kotlin + Ktor) ba
 
 ## Quick Start
 
-See [QUICKSTART_K8S.md](QUICKSTART_K8S.md) for the fastest path to a running development environment.
+See [docs/setup/quickstart.md](docs/setup/quickstart.md) for the fastest path to a running development environment.
 
 **TL;DR:**
 1. Run the host setup script (one-time):
@@ -13,13 +13,21 @@ See [QUICKSTART_K8S.md](QUICKSTART_K8S.md) for the fastest path to a running dev
 2. Open in VS Code/Cursor → Reopen in Container
 3. Run `tilt up`
 
+## Documentation
+
+See [docs/](docs/) for comprehensive documentation:
+- [Setup](docs/setup/quickstart.md) - Getting started guide
+- [Development](docs/development/kubernetes.md) - Kubernetes development workflow
+- [Architecture](docs/architecture/networking.md) - Networking and design decisions
+
 ## Canonical docs
 
 - Product + UX + system narrative: `ANCHOR.md`
 - Planning (epics/stories/tasks): `WORK.md` (lightweight backlog for now)
 - Long-lived working rules: `DIRECTIVES.md`
 - Planning conventions: `work/AGILE.md`
-- Agent collaboration conventions: `work/AGENTIC.md`
+- Agent collaboration conventions: `AGENTS.md`
+- Active work tracking: `wip-*.md` (root-level for agent visibility)
 
 ## Development environment
 

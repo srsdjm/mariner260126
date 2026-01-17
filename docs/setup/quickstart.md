@@ -159,7 +159,8 @@ k3d cluster delete mariner-dev
 
 ## Learn More
 
+- [Kubernetes Development](../development/kubernetes.md) - Kubernetes manifests and architecture
+- [Networking Architecture](../architecture/networking.md) - DevContainer + k3d networking details
 - [Tilt Documentation](https://docs.tilt.dev/)
 - [k3d Documentation](https://k3d.io/)
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
-- [k8s/README.md](k8s/README.md) - Detailed architecture documentation

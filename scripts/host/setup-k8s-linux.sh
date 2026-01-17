@@ -244,10 +244,14 @@ else
   fi
 
   # Create cluster with registry
+  # --k3s-arg adds TLS SANs for devcontainer access via Docker bridge gateway
+  # Docker bridge gateway is typically 172.17.0.1 on Linux/WSL2
   k3d cluster create "${CLUSTER_NAME}" \
     --registry-use "k3d-${REGISTRY_NAME}:${REGISTRY_PORT}" \
     --port "8080:80@loadbalancer" \
     --port "8443:443@loadbalancer" \
+    --k3s-arg "--tls-san=172.17.0.1@server:0" \
+    --k3s-arg "--tls-san=host.docker.internal@server:0" \
     --wait
 fi
 

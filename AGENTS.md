@@ -27,6 +27,34 @@ Common escalation cases:
 - Track epics, stories, and tasks in `WORK.md` (and `work/` when split out).
 - Keep planning artifacts lightweight until more structure is required.
 
+### Work-in-Progress (WIP) tracking
+
+**Active work initiatives use root-level `wip-*.md` files for maximum agent visibility:**
+
+- **Pattern**: `wip-<initiative-name>.md` (e.g., `wip-k8s-migration.md`, `wip-auth-implementation.md`)
+- **Location**: Repository root (not in subdirectories)
+- **Purpose**: Track in-flight work, current status, next steps, blockers
+- **Lifecycle**:
+  1. **Start**: Create `wip-<name>.md` at root when beginning significant work
+  2. **During**: Update status, completed tasks, discoveries, blockers
+  3. **Complete**: Move to `work/archive/wip-<name>-YYYY-MM-DD.md`
+  4. **Extract learnings**: Document architectural decisions in `docs/architecture/` if applicable
+
+**Why root-level WIP files help agents:**
+- Immediately visible in directory listings (agents check root first)
+- Clear naming convention signals active work
+- Easier to discover than nested work tracking
+- Provides context for current state of the project
+- Scoped per initiative (not buried in generic planning docs)
+
+**When to create a WIP file:**
+- Multi-day/multi-week initiatives (migrations, major features)
+- Work that spans multiple components or subsystems
+- Projects with phases, milestones, or validation checklists
+- When agents need to understand "what we're working on right now"
+
+**Check WIP files first** when starting a session to understand active work context.
+
 ## Directives
 
 - Maintain long-lived strategies and directives in `DIRECTIVES.md`.
